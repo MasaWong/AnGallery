@@ -1,0 +1,35 @@
+<manifest
+    package="mw.ankara.gallery"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.CAMERA"/>
+
+    <application>
+        <activity
+            android:name=".clip.PhotoClipActivity"
+            android:label="@string/photo_clip_title">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <data
+                    android:host="photo.clip"
+                    android:scheme="@string/scheme"/>
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".picker.PhotoPickerActivity"
+            android:label="@string/photo_picker_title">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <data
+                    android:host="photo.pick"
+                    android:scheme="@string/scheme"/>
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>
