@@ -19,7 +19,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewStub;
 import android.view.animation.Animation;
-import android.view.animation.AnimationSet;
+import android.view.animation.AnimationUtils;
 import android.widget.AdapterView;
 import android.widget.GridView;
 import android.widget.ListView;
@@ -39,6 +39,7 @@ import mw.ankara.gallery.picker.adapters.FloderAdapter;
 import mw.ankara.gallery.picker.adapters.PhotoAdapter;
 import mw.ankara.gallery.picker.beans.Photo;
 import mw.ankara.gallery.picker.beans.PhotoFloder;
+import mw.ankara.gallery.picker.utils.ImageLoader;
 import mw.ankara.gallery.picker.utils.OtherUtils;
 import mw.ankara.gallery.picker.utils.PhotoUtils;
 
@@ -50,7 +51,8 @@ import mw.ankara.gallery.picker.utils.PhotoUtils;
  */
 public class PhotoPickerActivity extends AppCompatActivity implements PhotoAdapter.PhotoClickCallBack {
 
-    public final static String KEY_RESULT = "picker_result";
+    public final static String KEY_RESULT = "bitmap";
+
     public final static int REQUEST_CAMERA = 1;
     public final static int REQUEST_CLIP = 2;
 
@@ -94,13 +96,15 @@ public class PhotoPickerActivity extends AppCompatActivity implements PhotoAdapt
      */
     private int mMaxNum = DEFAULT_NUM;
 
+    private ProgressDialog mProgressDialog;
+
     private GridView mGridView;
-    private Map<String, PhotoFloder> mFloderMap;
     private List<Photo> mPhotoLists = new ArrayList<>();
     private ArrayList<String> mSelectList = new ArrayList<>();
     private PhotoAdapter mPhotoAdapter;
-    private ProgressDialog mProgressDialog;
-    private ListView mFloderListView;
+
+    private Map<String, PhotoFloder> mFolderMap;
+    private ListView mFolderListView;
 
     private TextView mPhotoNumTV;
     private TextView mPhotoNameTV;
@@ -118,8 +122,8 @@ public class PhotoPickerActivity extends AppCompatActivity implements PhotoAdapt
     /**
      * 初始化文件夹列表的显示隐藏动画
      */
-    private AnimationSet mInAnimationSet;
-    private AnimationSet mOutAnimationSet;
+    private Animation mInAnimation;
+    private Animation mOutAnimation;
 
     /**
      * 拍照时存储拍照结果的临时文件
@@ -139,7 +143,7 @@ public class PhotoPickerActivity extends AppCompatActivity implements PhotoAdapt
         }
 
         // 绑定View
-        mGridView = (GridView) findViewById(R.id.photo_gridview);
+        mGridView = (GridView) findViewById(R.id.photo_picker_rv_list);
         mPhotoNumTV = (TextView) findViewById(R.id.photo_num);
         mPhotoNameTV = (TextView) findViewById(R.id.floder_name);
         findViewById(R.id.bottom_tab_bar).setOnTouchListener(new View.OnTouchListener() {
@@ -189,7 +193,8 @@ public class PhotoPickerActivity extends AppCompatActivity implements PhotoAdapt
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item == mMiCommit) {
-            mSelectList.addAll(mPhotoAdapter.getmSelectedPhotos());
+            mSelectList.clear();
+            mSelectList.addAll(mPhotoAdapter.getSelectedPhotos());
             returnData();
             return true;
         } else if (item.getItemId() == android.R.id.home) {
@@ -198,6 +203,12 @@ public class PhotoPickerActivity extends AppCompatActivity implements PhotoAdapt
         } else {
             return super.onOptionsItemSelected(item);
         }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        ImageLoader.releaseInstance();
     }
 
     /**
@@ -211,6 +222,7 @@ public class PhotoPickerActivity extends AppCompatActivity implements PhotoAdapt
         }
         String path = photo.getPath();
         if (mSelectMode == MODE_SINGLE) {
+            mSelectList.clear();
             mSelectList.add(path);
             returnData();
         }
@@ -218,7 +230,7 @@ public class PhotoPickerActivity extends AppCompatActivity implements PhotoAdapt
 
     @Override
     public void onPhotoClick() {
-        List<String> list = mPhotoAdapter.getmSelectedPhotos();
+        List<String> list = mPhotoAdapter.getSelectedPhotos();
         if (list != null && list.size() > 0) {
             mMiCommit.setEnabled(true);
             setTitle(getString(R.string.photo_picker_format, list.size(), mMaxNum));
@@ -274,10 +286,10 @@ public class PhotoPickerActivity extends AppCompatActivity implements PhotoAdapt
             ViewStub floderStub = (ViewStub) findViewById(R.id.floder_stub);
             floderStub.inflate();
             View dimLayout = findViewById(R.id.dim_layout);
-            mFloderListView = (ListView) findViewById(R.id.listview_floder);
+            mFolderListView = (ListView) findViewById(R.id.listview_floder);
             final FloderAdapter adapter = new FloderAdapter(this, floders);
-            mFloderListView.setAdapter(adapter);
-            mFloderListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            mFolderListView.setAdapter(adapter);
+            mFolderListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                 @Override
                 public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                     for (PhotoFloder floder : floders) {
@@ -289,11 +301,6 @@ public class PhotoPickerActivity extends AppCompatActivity implements PhotoAdapt
 
                     mPhotoLists.clear();
                     mPhotoLists.addAll(floder.getPhotoList());
-                    if (ALL_PHOTO.equals(floder.getName())) {
-                        mPhotoAdapter.setIsShowCamera(mShowCamera);
-                    } else {
-                        mPhotoAdapter.setIsShowCamera(false);
-                    }
                     //这里重新设置adapter而不是直接notifyDataSetChanged，是让GridView返回顶部
                     mGridView.setAdapter(mPhotoAdapter);
                     mPhotoNumTV.setText(OtherUtils.formatResourceString(getApplicationContext(),
@@ -314,8 +321,8 @@ public class PhotoPickerActivity extends AppCompatActivity implements PhotoAdapt
                 }
             });
 
-            mInAnimationSet = new AnimationSet(true);
-            mOutAnimationSet = new AnimationSet(true);
+            mInAnimation = AnimationUtils.loadAnimation(this, R.anim.abc_slide_in_bottom);
+            mOutAnimation = AnimationUtils.loadAnimation(this, R.anim.abc_slide_out_bottom);
 
             mIsFloderViewInit = true;
         }
@@ -327,10 +334,12 @@ public class PhotoPickerActivity extends AppCompatActivity implements PhotoAdapt
      */
     private void toggle() {
         if (mIsFloderViewShow) {
-            mFloderListView.startAnimation(mOutAnimationSet);
+            mFolderListView.startAnimation(mOutAnimation);
+            mFolderListView.setVisibility(View.GONE);
             mIsFloderViewShow = false;
         } else {
-            mFloderListView.startAnimation(mInAnimationSet);
+            mFolderListView.startAnimation(mInAnimation);
+            mFolderListView.setVisibility(View.VISIBLE);
             mIsFloderViewShow = true;
         }
     }
@@ -341,7 +350,7 @@ public class PhotoPickerActivity extends AppCompatActivity implements PhotoAdapt
      * @param photoFloder
      */
     public void selectFloder(PhotoFloder photoFloder) {
-        mPhotoAdapter.setDatas(photoFloder.getPhotoList());
+        mPhotoAdapter.setPhotos(photoFloder.getPhotoList(), mShowCamera);
         mPhotoAdapter.notifyDataSetChanged();
     }
 
@@ -357,32 +366,31 @@ public class PhotoPickerActivity extends AppCompatActivity implements PhotoAdapt
 
         @Override
         protected Object doInBackground(Object[] params) {
-            mFloderMap = PhotoUtils.getPhotos(getApplicationContext());
+            mFolderMap = PhotoUtils.getPhotos(getApplicationContext());
             return null;
         }
 
         @Override
         protected void onPostExecute(Object o) {
-            mPhotoLists.addAll(mFloderMap.get(ALL_PHOTO).getPhotoList());
+            mPhotoLists.addAll(mFolderMap.get(ALL_PHOTO).getPhotoList());
 
             mPhotoNumTV.setText(OtherUtils.formatResourceString(getApplicationContext(),
                 R.string.photos_num, mPhotoLists.size()));
 
-            mPhotoAdapter = new PhotoAdapter(PhotoPickerActivity.this, mPhotoLists);
-            mPhotoAdapter.setIsShowCamera(mShowCamera);
+            mPhotoAdapter = new PhotoAdapter(PhotoPickerActivity.this, mPhotoLists, mShowCamera);
             mPhotoAdapter.setSelectMode(mSelectMode);
             mPhotoAdapter.setMaxNum(mMaxNum);
             mPhotoAdapter.setPhotoClickCallBack(PhotoPickerActivity.this);
             mGridView.setAdapter(mPhotoAdapter);
-            Set<String> keys = mFloderMap.keySet();
+            Set<String> keys = mFolderMap.keySet();
             final List<PhotoFloder> floders = new ArrayList<>();
             for (String key : keys) {
                 if (ALL_PHOTO.equals(key)) {
-                    PhotoFloder floder = mFloderMap.get(key);
+                    PhotoFloder floder = mFolderMap.get(key);
                     floder.setIsSelected(true);
                     floders.add(0, floder);
                 } else {
-                    floders.add(mFloderMap.get(key));
+                    floders.add(mFolderMap.get(key));
                 }
             }
             mPhotoNameTV.setOnClickListener(new View.OnClickListener() {
@@ -396,11 +404,12 @@ public class PhotoPickerActivity extends AppCompatActivity implements PhotoAdapt
             mGridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                 @Override
                 public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                    if (mPhotoAdapter.isShowCamera() && position == 0) {
+                    Photo photo = mPhotoAdapter.getItem(position);
+                    if (photo == PhotoAdapter.CAMERA) {
                         onCameraClick();
-                        return;
+                    } else {
+                        selectPhoto(photo);
                     }
-                    selectPhoto(mPhotoAdapter.getItem(position));
                 }
             });
             mProgressDialog.dismiss();

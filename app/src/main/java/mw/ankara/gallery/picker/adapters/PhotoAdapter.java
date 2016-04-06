@@ -1,7 +1,7 @@
 package mw.ankara.gallery.picker.adapters;
 
 import android.content.Context;
-import android.view.LayoutInflater;
+import android.util.DisplayMetrics;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
@@ -17,7 +17,6 @@ import mw.ankara.gallery.R;
 import mw.ankara.gallery.picker.PhotoPickerActivity;
 import mw.ankara.gallery.picker.beans.Photo;
 import mw.ankara.gallery.picker.utils.ImageLoader;
-import mw.ankara.gallery.picker.utils.OtherUtils;
 
 /**
  * @Class: PhotoAdapter
@@ -30,72 +29,44 @@ public class PhotoAdapter extends BaseAdapter {
     private static final int TYPE_CAMERA = 0;
     private static final int TYPE_PHOTO = 1;
 
-    private List<Photo> mDatas;
+    public static final Photo CAMERA = null;
+
+    private List<Photo> mPhotos;
     //存放已选中的Photo数据
-    private List<String> mSelectedPhotos;
-    private int mWidth;
+    private List<String> mSelectedPhotos = new ArrayList<>();
+    private int mSize;
+
     //是否显示相机，默认不显示
-    private boolean mIsShowCamera = false;
+    private boolean mShowCamera = false;
     //照片选择模式，默认单选
     private int mSelectMode = PhotoPickerActivity.MODE_SINGLE;
     //图片选择数量
     private int mMaxNum = PhotoPickerActivity.DEFAULT_NUM;
 
-    private View.OnClickListener mOnPhotoClick;
+    private View.OnClickListener mPhotoClickListener;
     private PhotoClickCallBack mCallBack;
 
-    public PhotoAdapter(Context context, List<Photo> mDatas) {
-        this.mDatas = mDatas;
-        int screenWidth = OtherUtils.getWidthInPx(context);
-        mWidth = (screenWidth - OtherUtils.dip2px(context, 4)) / 3;
+    public PhotoAdapter(Context context, List<Photo> photos, boolean showCamera) {
+        setPhotos(photos, showCamera);
+
+        DisplayMetrics metrics = context.getResources().getDisplayMetrics();
+        int screenWidth = metrics.widthPixels;
+        mSize = (screenWidth - (int) (4 * metrics.density + 0.5)) / 3;
     }
 
-    @Override
-    public int getViewTypeCount() {
-        return 2;
+    public void setShowCamera(boolean showCamera) {
+        mShowCamera = showCamera;
     }
 
-    @Override
-    public int getItemViewType(int position) {
-        if (position == 0 && mIsShowCamera) {
-            return TYPE_CAMERA;
-        } else {
-            return TYPE_PHOTO;
+    public void setPhotos(List<Photo> photos) {
+        setPhotos(photos, mShowCamera);
+    }
+
+    public void setPhotos(List<Photo> photos, boolean showCamera) {
+        mPhotos = photos;
+        if (showCamera) { // 显示相机的话加入空占位符
+            mPhotos.add(0, CAMERA);
         }
-    }
-
-    @Override
-    public int getCount() {
-        return mDatas.size();
-    }
-
-    @Override
-    public Photo getItem(int position) {
-        if (mIsShowCamera) {
-            if (position == 0) {
-                return null;
-            }
-            return mDatas.get(position - 1);
-        } else {
-            return mDatas.get(position);
-        }
-    }
-
-    @Override
-    public long getItemId(int position) {
-        return mDatas.get(position).getId();
-    }
-
-    public void setDatas(List<Photo> mDatas) {
-        this.mDatas = mDatas;
-    }
-
-    public void setIsShowCamera(boolean isShowCamera) {
-        this.mIsShowCamera = isShowCamera;
-    }
-
-    public boolean isShowCamera() {
-        return mIsShowCamera;
     }
 
     public void setMaxNum(int maxNum) {
@@ -106,63 +77,81 @@ public class PhotoAdapter extends BaseAdapter {
         mCallBack = callback;
     }
 
-
-    /**
-     * 获取已选中相片
-     *
-     * @return
-     */
-    public List<String> getmSelectedPhotos() {
-        return mSelectedPhotos;
-    }
-
     public void setSelectMode(int selectMode) {
         this.mSelectMode = selectMode;
-        if (mSelectMode == PhotoPickerActivity.MODE_MULTI) {
-            initMultiMode();
+        if (mSelectMode == PhotoPickerActivity.MODE_MULTI && mPhotoClickListener == null) {
+            /**
+             * 初始化多选模式所需要的参数
+             */
+            mPhotoClickListener = new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    String path = v.findViewById(R.id.imageview_photo).getTag().toString();
+                    if (mSelectedPhotos.contains(path)) {
+                        v.findViewById(R.id.mask).setVisibility(View.GONE);
+                        v.findViewById(R.id.checkmark).setSelected(false);
+                        mSelectedPhotos.remove(path);
+                    } else {
+                        if (mSelectedPhotos.size() >= mMaxNum) {
+                            Toast.makeText(v.getContext(), R.string.msg_maxi_capacity,
+                                Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        mSelectedPhotos.add(path);
+                        v.findViewById(R.id.mask).setVisibility(View.VISIBLE);
+                        v.findViewById(R.id.checkmark).setSelected(true);
+                    }
+                    if (mCallBack != null) {
+                        mCallBack.onPhotoClick();
+                    }
+                }
+            };
         }
     }
 
     /**
-     * 初始化多选模式所需要的参数
+     * 获取已选中相片
      */
-    private void initMultiMode() {
-        mSelectedPhotos = new ArrayList<String>();
-        mOnPhotoClick = new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                String path = v.findViewById(R.id.imageview_photo).getTag().toString();
-                if (mSelectedPhotos.contains(path)) {
-                    v.findViewById(R.id.mask).setVisibility(View.GONE);
-                    v.findViewById(R.id.checkmark).setSelected(false);
-                    mSelectedPhotos.remove(path);
-                } else {
-                    if (mSelectedPhotos.size() >= mMaxNum) {
-                        Toast.makeText(v.getContext(), R.string.msg_maxi_capacity,
-                            Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-                    mSelectedPhotos.add(path);
-                    v.findViewById(R.id.mask).setVisibility(View.VISIBLE);
-                    v.findViewById(R.id.checkmark).setSelected(true);
-                }
-                if (mCallBack != null) {
-                    mCallBack.onPhotoClick();
-                }
-            }
-        };
+    public List<String> getSelectedPhotos() {
+        return mSelectedPhotos;
+    }
+
+    @Override
+    public int getViewTypeCount() {
+        return 2;
+    }
+
+    @Override
+    public int getItemViewType(int position) {
+        return getItem(position) == null ? TYPE_CAMERA : TYPE_PHOTO;
+    }
+
+    @Override
+    public int getCount() {
+        return mPhotos.size();
+    }
+
+    @Override
+    public Photo getItem(int position) {
+        return mPhotos.get(position);
+    }
+
+    @Override
+    public long getItemId(int position) {
+        return 0;
     }
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
         if (getItemViewType(position) == TYPE_CAMERA) {
-            convertView = View.inflate(parent.getContext(), R.layout.item_camera_layout, null);
-            convertView.setTag(null);
+            if (convertView == null) {
+                convertView = View.inflate(parent.getContext(), R.layout.item_camera_layout, null);
+            }
             //设置高度等于宽度
-            GridView.LayoutParams lp = new GridView.LayoutParams(mWidth, mWidth);
+            GridView.LayoutParams lp = new GridView.LayoutParams(mSize, mSize);
             convertView.setLayoutParams(lp);
         } else {
-            ViewHolder holder = null;
+            ViewHolder holder;
             if (convertView == null) {
                 holder = new ViewHolder();
                 convertView = View.inflate(parent.getContext(), R.layout.item_photo_layout, null);
@@ -175,24 +164,7 @@ public class PhotoAdapter extends BaseAdapter {
                 holder = (ViewHolder) convertView.getTag();
             }
 
-            holder.photoImageView.setImageResource(R.drawable.img_photo_default);
-            Photo photo = getItem(position);
-            if (mSelectMode == PhotoPickerActivity.MODE_MULTI) {
-                holder.wrapLayout.setOnClickListener(mOnPhotoClick);
-                holder.photoImageView.setTag(photo.getPath());
-                holder.selectView.setVisibility(View.VISIBLE);
-                if (mSelectedPhotos != null && mSelectedPhotos.contains(photo.getPath())) {
-                    holder.selectView.setSelected(true);
-                    holder.maskView.setVisibility(View.VISIBLE);
-                } else {
-                    holder.selectView.setSelected(false);
-                    holder.maskView.setVisibility(View.GONE);
-                }
-            } else {
-                holder.selectView.setVisibility(View.GONE);
-            }
-            ImageLoader.getInstance().display(photo.getPath(), holder.photoImageView,
-                    mWidth, mWidth);
+            holder.setPhoto(getItem(position));
         }
         return convertView;
     }
@@ -202,6 +174,25 @@ public class PhotoAdapter extends BaseAdapter {
         private ImageView selectView;
         private View maskView;
         private FrameLayout wrapLayout;
+
+        public void setPhoto(Photo photo) {
+            photoImageView.setImageResource(R.drawable.img_photo_default);
+            if (mSelectMode == PhotoPickerActivity.MODE_MULTI) {
+                wrapLayout.setOnClickListener(mPhotoClickListener);
+                photoImageView.setTag(photo.getPath());
+                selectView.setVisibility(View.VISIBLE);
+                if (mSelectedPhotos != null && mSelectedPhotos.contains(photo.getPath())) {
+                    selectView.setSelected(true);
+                    maskView.setVisibility(View.VISIBLE);
+                } else {
+                    selectView.setSelected(false);
+                    maskView.setVisibility(View.GONE);
+                }
+            } else {
+                selectView.setVisibility(View.GONE);
+            }
+            ImageLoader.getInstance().display(photo.getPath(), photoImageView, mSize, mSize);
+        }
     }
 
     /**

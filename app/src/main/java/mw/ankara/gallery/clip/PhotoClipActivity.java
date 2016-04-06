@@ -23,6 +23,10 @@ import mw.ankara.gallery.R;
  */
 public class PhotoClipActivity extends AppCompatActivity {
 
+    public final static String KEY_PHOTO = "photo";
+
+    public final static String KEY_RESULT = "bitmap";
+
     private AnClipView mACVLayout;
 
     @Override
@@ -40,8 +44,8 @@ public class PhotoClipActivity extends AppCompatActivity {
         mACVLayout = (AnClipView) findViewById(R.id.clip_acv_layout);
 
         Uri uri = getIntent().getData();
-        String path = uri == null ? getIntent().getStringExtra("photo")
-            : uri.getQueryParameter("photo");
+        String path = uri == null ? getIntent().getStringExtra(KEY_PHOTO)
+            : uri.getQueryParameter(KEY_PHOTO);
         if (!TextUtils.isEmpty(path)) {
             mACVLayout.setImagePath(URLDecoder.decode(path));
         }
@@ -60,10 +64,10 @@ public class PhotoClipActivity extends AppCompatActivity {
 
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             bitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
-            byte[] datas = baos.toByteArray();
+            byte[] bytes = baos.toByteArray();
 
             Intent intent = new Intent();
-            intent.putExtra("bitmap", datas);
+            intent.putExtra(KEY_RESULT, bytes);
             setResult(RESULT_OK, intent);
             finish();
             return true;

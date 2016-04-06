@@ -6,13 +6,10 @@ import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
+import android.support.v4.util.LruCache;
 import android.text.TextUtils;
-import android.util.LruCache;
 import android.widget.ImageView;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.ref.WeakReference;
 import java.util.LinkedList;
@@ -29,12 +26,16 @@ import java.util.concurrent.Semaphore;
 public class ImageLoader {
 
     private static final int THREAD_POOL_SIZE = 10;
-    private final static Executor BITMAP_LOAD_EXECUTOR = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
-    private final static Executor BITMAP_CACHE_EXECUTOR = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
+    private static Executor BITMAP_LOAD_EXECUTOR = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
+    private static Executor BITMAP_CACHE_EXECUTOR = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
 
-    /** {@value */
+    /**
+     * {@value
+     */
     public static final Bitmap.CompressFormat DEFAULT_COMPRESS_FORMAT = Bitmap.CompressFormat.PNG;
-    /** {@value */
+    /**
+     * {@value
+     */
     public static final int DEFAULT_COMPRESS_QUALITY = 100;
 
     private LruCache<String, Bitmap> mMemoryCache;
@@ -63,7 +64,7 @@ public class ImageLoader {
                 String path = holder.path;
                 ImageView imageView = holder.imageView;
                 Bitmap bitmap = holder.bitmap;
-                if(imageView == null || bitmap == null) {
+                if (imageView == null || bitmap == null) {
                     return;
                 }
                 if (!TextUtils.isEmpty(path) && path.equals(imageView.getTag().toString())) {
@@ -84,7 +85,7 @@ public class ImageLoader {
                         } catch (InterruptedException e) {
                         }
                         BitmapLoadTask task = getTask();
-                        if(task != null) {
+                        if (task != null) {
                             task.executeOnExecutor(BITMAP_LOAD_EXECUTOR, mWidth, mWidth);
                         }
                     }
@@ -101,10 +102,19 @@ public class ImageLoader {
     }
 
     public static synchronized ImageLoader getInstance() {
-        if(mInstance == null) {
+        if (mInstance == null) {
             mInstance = new ImageLoader();
         }
         return mInstance;
+    }
+
+    public static void releaseInstance() {
+        if (mInstance != null) {
+            mInstance.mMemoryCache = null;
+            mInstance = null;
+            BITMAP_CACHE_EXECUTOR = null;
+            BITMAP_LOAD_EXECUTOR = null;
+        }
     }
 
     /**
@@ -177,6 +187,7 @@ public class ImageLoader {
 
     /**
      * 从内存缓存中获取图片
+     *
      * @param key
      * @return
      */
@@ -185,7 +196,7 @@ public class ImageLoader {
     }
 
     private void addBitmapToMemoryCache(String key, Bitmap bitmap) {
-        if(!TextUtils.isEmpty(key) && bitmap != null) {
+        if (!TextUtils.isEmpty(key) && bitmap != null) {
             mMemoryCache.put(key, bitmap);
         }
     }
@@ -254,7 +265,6 @@ public class ImageLoader {
     }
 
 
-
     /**
      * 计算inSampleSize，用于压缩图片
      *
@@ -276,7 +286,7 @@ public class ImageLoader {
         // if(min > maxReq) {
         //     inSampleSize = Math.round((float) min / (float) maxReq);
         // }
-        
+
         // 通过之前的计算方法，在加载类似400*4000这种长图时会内存溢出
         if (width > reqWidth || height > reqHeight) {
             int widthRadio = Math.round(width * 1.0f / reqWidth);
@@ -304,7 +314,7 @@ public class ImageLoader {
         BitmapFactory.decodeFile(pathName, options);
         // 调用上面定义的方法计算inSampleSize值
         options.inSampleSize = calculateInSampleSize(options, reqWidth,
-                reqHeight);
+            reqHeight);
         // 使用获取到的inSampleSize值再次解析图片
         options.inJustDecodeBounds = false;
         Bitmap bitmap = BitmapFactory.decodeFile(pathName, options);
