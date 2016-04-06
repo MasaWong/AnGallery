@@ -2,6 +2,7 @@ package mw.ankara.gallery.clip;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.util.AttributeSet;
@@ -46,7 +47,7 @@ public class ClipImageLayout extends RelativeLayout {
     }
 
     public void setImagePath(String path) {
-        mZoomImageView.setImageURI(Uri.parse(path));
+        setImageBitmap(BitmapFactory.decodeFile(path));
     }
 
     public void setImageBitmap(Bitmap bitmap) {

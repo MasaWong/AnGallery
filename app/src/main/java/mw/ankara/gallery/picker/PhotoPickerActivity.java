@@ -143,7 +143,7 @@ public class PhotoPickerActivity extends AppCompatActivity implements PhotoAdapt
         }
 
         // 绑定View
-        mGridView = (GridView) findViewById(R.id.photo_picker_rv_list);
+        mGridView = (GridView) findViewById(R.id.photo_gridview);
         mPhotoNumTV = (TextView) findViewById(R.id.photo_num);
         mPhotoNameTV = (TextView) findViewById(R.id.floder_name);
         findViewById(R.id.bottom_tab_bar).setOnTouchListener(new View.OnTouchListener() {
