@@ -35,11 +35,10 @@ import java.util.Set;
 
 import mw.ankara.gallery.R;
 import mw.ankara.gallery.clip.PhotoClipActivity;
-import mw.ankara.gallery.picker.adapters.FloderAdapter;
+import mw.ankara.gallery.picker.adapters.FolderAdapter;
 import mw.ankara.gallery.picker.adapters.PhotoAdapter;
 import mw.ankara.gallery.picker.beans.Photo;
-import mw.ankara.gallery.picker.beans.PhotoFloder;
-import mw.ankara.gallery.picker.utils.ImageLoader;
+import mw.ankara.gallery.picker.beans.PhotoFolder;
 import mw.ankara.gallery.picker.utils.OtherUtils;
 import mw.ankara.gallery.picker.utils.PhotoUtils;
 
@@ -103,7 +102,7 @@ public class PhotoPickerActivity extends AppCompatActivity implements PhotoAdapt
     private ArrayList<String> mSelectList = new ArrayList<>();
     private PhotoAdapter mPhotoAdapter;
 
-    private Map<String, PhotoFloder> mFolderMap;
+    private Map<String, PhotoFolder> mFolderMap;
     private ListView mFolderListView;
 
     private TextView mPhotoNumTV;
@@ -205,12 +204,6 @@ public class PhotoPickerActivity extends AppCompatActivity implements PhotoAdapt
         }
     }
 
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        ImageLoader.releaseInstance();
-    }
-
     /**
      * 点击选择某张照片
      *
@@ -280,22 +273,22 @@ public class PhotoPickerActivity extends AppCompatActivity implements PhotoAdapt
      *
      * @param floders
      */
-    private void toggleFloderList(final List<PhotoFloder> floders) {
+    private void toggleFloderList(final List<PhotoFolder> floders) {
         //初始化文件夹列表
         if (!mIsFloderViewInit) {
             ViewStub floderStub = (ViewStub) findViewById(R.id.floder_stub);
             floderStub.inflate();
             View dimLayout = findViewById(R.id.dim_layout);
             mFolderListView = (ListView) findViewById(R.id.listview_floder);
-            final FloderAdapter adapter = new FloderAdapter(this, floders);
+            final FolderAdapter adapter = new FolderAdapter(this, floders);
             mFolderListView.setAdapter(adapter);
             mFolderListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                 @Override
                 public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                    for (PhotoFloder floder : floders) {
+                    for (PhotoFolder floder : floders) {
                         floder.setIsSelected(false);
                     }
-                    PhotoFloder floder = floders.get(position);
+                    PhotoFolder floder = floders.get(position);
                     floder.setIsSelected(true);
                     adapter.notifyDataSetChanged();
 
@@ -347,10 +340,10 @@ public class PhotoPickerActivity extends AppCompatActivity implements PhotoAdapt
     /**
      * 选择文件夹
      *
-     * @param photoFloder
+     * @param photoFolder
      */
-    public void selectFloder(PhotoFloder photoFloder) {
-        mPhotoAdapter.setPhotos(photoFloder.getPhotoList(), mShowCamera);
+    public void selectFloder(PhotoFolder photoFolder) {
+        mPhotoAdapter.setPhotos(photoFolder.getPhotoList(), mShowCamera);
         mPhotoAdapter.notifyDataSetChanged();
     }
 
@@ -383,10 +376,10 @@ public class PhotoPickerActivity extends AppCompatActivity implements PhotoAdapt
             mPhotoAdapter.setPhotoClickCallBack(PhotoPickerActivity.this);
             mGridView.setAdapter(mPhotoAdapter);
             Set<String> keys = mFolderMap.keySet();
-            final List<PhotoFloder> floders = new ArrayList<>();
+            final List<PhotoFolder> floders = new ArrayList<>();
             for (String key : keys) {
                 if (ALL_PHOTO.equals(key)) {
-                    PhotoFloder floder = mFolderMap.get(key);
+                    PhotoFolder floder = mFolderMap.get(key);
                     floder.setIsSelected(true);
                     floders.add(0, floder);
                 } else {

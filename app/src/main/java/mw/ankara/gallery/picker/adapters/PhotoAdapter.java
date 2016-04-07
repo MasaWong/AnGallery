@@ -16,7 +16,7 @@ import java.util.List;
 import mw.ankara.gallery.R;
 import mw.ankara.gallery.picker.PhotoPickerActivity;
 import mw.ankara.gallery.picker.beans.Photo;
-import mw.ankara.gallery.picker.utils.ImageLoader;
+import mw.ankara.gallery.ImageUtils;
 
 /**
  * @Class: PhotoAdapter
@@ -153,12 +153,8 @@ public class PhotoAdapter extends BaseAdapter {
         } else {
             ViewHolder holder;
             if (convertView == null) {
-                holder = new ViewHolder();
                 convertView = View.inflate(parent.getContext(), R.layout.item_photo_layout, null);
-                holder.photoImageView = (ImageView) convertView.findViewById(R.id.imageview_photo);
-                holder.selectView = (ImageView) convertView.findViewById(R.id.checkmark);
-                holder.maskView = convertView.findViewById(R.id.mask);
-                holder.wrapLayout = (FrameLayout) convertView.findViewById(R.id.wrap_layout);
+                holder = new ViewHolder(convertView);
                 convertView.setTag(holder);
             } else {
                 holder = (ViewHolder) convertView.getTag();
@@ -174,6 +170,13 @@ public class PhotoAdapter extends BaseAdapter {
         private ImageView selectView;
         private View maskView;
         private FrameLayout wrapLayout;
+
+        public ViewHolder(View convertView) {
+            photoImageView = (ImageView) convertView.findViewById(R.id.imageview_photo);
+            selectView = (ImageView) convertView.findViewById(R.id.checkmark);
+            maskView = convertView.findViewById(R.id.mask);
+            wrapLayout = (FrameLayout) convertView.findViewById(R.id.wrap_layout);
+        }
 
         public void setPhoto(Photo photo) {
             photoImageView.setImageResource(R.drawable.img_photo_default);
@@ -191,7 +194,7 @@ public class PhotoAdapter extends BaseAdapter {
             } else {
                 selectView.setVisibility(View.GONE);
             }
-            ImageLoader.getInstance().display(photo.getPath(), photoImageView, mSize, mSize);
+            ImageUtils.display(photo.getPath(), photoImageView, mSize);
         }
     }
 

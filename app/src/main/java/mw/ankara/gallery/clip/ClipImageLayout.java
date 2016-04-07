@@ -6,8 +6,11 @@ import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.util.AttributeSet;
+import android.util.DisplayMetrics;
 import android.util.TypedValue;
 import android.widget.RelativeLayout;
+
+import mw.ankara.gallery.ImageUtils;
 
 /**
  * http://blog.csdn.net/lmj623565791/article/details/39761281
@@ -47,7 +50,8 @@ public class ClipImageLayout extends RelativeLayout {
     }
 
     public void setImagePath(String path) {
-        setImageBitmap(BitmapFactory.decodeFile(path));
+        DisplayMetrics metrics = getResources().getDisplayMetrics();
+        ImageUtils.display(path, mZoomImageView, metrics.widthPixels, metrics.heightPixels);
     }
 
     public void setImageBitmap(Bitmap bitmap) {
