@@ -17,7 +17,7 @@ public class ImageUtils {
     }
 
     public static void display(String path, ImageView imageView, int width, int height) {
-        if (TextUtils.isEmpty(path)) {
+        if (TextUtils.isEmpty(path) || imageView == null) {
             return;
         }
 

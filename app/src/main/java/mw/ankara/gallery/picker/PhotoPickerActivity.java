@@ -326,14 +326,12 @@ public class PhotoPickerActivity extends AppCompatActivity implements PhotoAdapt
      * 弹出或者收起文件夹列表
      */
     private void toggle() {
-        if (mIsFloderViewShow) {
+        if (mFolderListView.getVisibility() == View.VISIBLE) {
             mFolderListView.startAnimation(mOutAnimation);
             mFolderListView.setVisibility(View.GONE);
-            mIsFloderViewShow = false;
         } else {
             mFolderListView.startAnimation(mInAnimation);
             mFolderListView.setVisibility(View.VISIBLE);
-            mIsFloderViewShow = true;
         }
     }
 

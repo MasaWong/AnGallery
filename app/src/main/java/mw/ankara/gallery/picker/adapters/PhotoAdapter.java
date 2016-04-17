@@ -16,7 +16,7 @@ import java.util.List;
 import mw.ankara.gallery.R;
 import mw.ankara.gallery.picker.PhotoPickerActivity;
 import mw.ankara.gallery.picker.beans.Photo;
-import mw.ankara.gallery.ImageUtils;
+import mw.ankara.uikit.image.SquareImageView;
 
 /**
  * @Class: PhotoAdapter
@@ -166,20 +166,21 @@ public class PhotoAdapter extends BaseAdapter {
     }
 
     private class ViewHolder {
-        private ImageView photoImageView;
+        private SquareImageView photoImageView;
         private ImageView selectView;
         private View maskView;
         private FrameLayout wrapLayout;
 
         public ViewHolder(View convertView) {
-            photoImageView = (ImageView) convertView.findViewById(R.id.imageview_photo);
+            photoImageView = (SquareImageView) convertView.findViewById(R.id.imageview_photo);
             selectView = (ImageView) convertView.findViewById(R.id.checkmark);
             maskView = convertView.findViewById(R.id.mask);
             wrapLayout = (FrameLayout) convertView.findViewById(R.id.wrap_layout);
         }
 
         public void setPhoto(Photo photo) {
-            photoImageView.setImageResource(R.drawable.img_photo_default);
+            photoImageView.setImagePath(photo.getPath(), R.drawable.img_photo_default, 0);
+
             if (mSelectMode == PhotoPickerActivity.MODE_MULTI) {
                 wrapLayout.setOnClickListener(mPhotoClickListener);
                 photoImageView.setTag(photo.getPath());
@@ -194,7 +195,6 @@ public class PhotoAdapter extends BaseAdapter {
             } else {
                 selectView.setVisibility(View.GONE);
             }
-            ImageUtils.display(photo.getPath(), photoImageView, mSize);
         }
     }
 
