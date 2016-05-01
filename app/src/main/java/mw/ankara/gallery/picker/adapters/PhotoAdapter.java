@@ -179,7 +179,7 @@ public class PhotoAdapter extends BaseAdapter {
         }
 
         public void setPhoto(Photo photo) {
-            photoImageView.setImagePath(photo.getPath(), R.drawable.img_photo_default, 0);
+            photoImageView.setImagePathWithHolder(photo.getPath(), R.drawable.img_photo_default, 0);
 
             if (mSelectMode == PhotoPickerActivity.MODE_MULTI) {
                 wrapLayout.setOnClickListener(mPhotoClickListener);
