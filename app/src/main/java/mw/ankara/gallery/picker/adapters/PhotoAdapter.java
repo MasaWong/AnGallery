@@ -31,13 +31,13 @@ public class PhotoAdapter extends BaseAdapter {
 
     public static final Photo CAMERA = null;
 
-    private List<Photo> mPhotos;
+    private List<Photo> mPhotos = new ArrayList<>();
     //存放已选中的Photo数据
     private List<String> mSelectedPhotos = new ArrayList<>();
     private int mSize;
 
-    //是否显示相机，默认不显示
-    private boolean mShowCamera = false;
+    //是否显示相机
+    private boolean mShowCamera = true;
     //照片选择模式，默认单选
     private int mSelectMode = PhotoPickerActivity.MODE_SINGLE;
     //图片选择数量
@@ -46,12 +46,12 @@ public class PhotoAdapter extends BaseAdapter {
     private View.OnClickListener mPhotoClickListener;
     private PhotoClickCallBack mCallBack;
 
-    public PhotoAdapter(Context context, List<Photo> photos, boolean showCamera) {
-        setPhotos(photos, showCamera);
+    public PhotoAdapter(Context context, List<Photo> photos) {
+        setPhotos(photos, mShowCamera);
 
         DisplayMetrics metrics = context.getResources().getDisplayMetrics();
         int screenWidth = metrics.widthPixels;
-        mSize = (screenWidth - (int) (4 * metrics.density + 0.5)) / 3;
+        mSize = (screenWidth - (int) (8 * metrics.density + 0.5)) / 3;
     }
 
     public void setShowCamera(boolean showCamera) {
@@ -63,7 +63,8 @@ public class PhotoAdapter extends BaseAdapter {
     }
 
     public void setPhotos(List<Photo> photos, boolean showCamera) {
-        mPhotos = photos;
+        mPhotos.clear();
+        mPhotos.addAll(photos);
         if (showCamera) { // 显示相机的话加入空占位符
             mPhotos.add(0, CAMERA);
         }

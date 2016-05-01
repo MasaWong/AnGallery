@@ -12,8 +12,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import mw.ankara.gallery.picker.beans.Folder;
 import mw.ankara.gallery.picker.beans.Photo;
-import mw.ankara.gallery.picker.beans.PhotoFolder;
 
 /**
  * @Class: PhotoUtils
@@ -23,11 +23,11 @@ import mw.ankara.gallery.picker.beans.PhotoFolder;
  */
 public class PhotoUtils {
 
-    public static Map<String, PhotoFolder> getPhotos(Context context) {
-        Map<String, PhotoFolder> folderMap = new HashMap<>();
+    public static Map<String, Folder> getPhotos(Context context) {
+        Map<String, Folder> folderMap = new HashMap<>();
 
         String allPhotosKey = "所有图片";
-        PhotoFolder folder = new PhotoFolder();
+        Folder folder = new Folder();
         folder.setName(allPhotosKey);
         folder.setDirPath(allPhotosKey);
         folder.setPhotoList(new ArrayList<Photo>());
@@ -59,12 +59,12 @@ public class PhotoUtils {
 
                 if (folderMap.containsKey(dirPath)) {
                     Photo photo = new Photo(path);
-                    PhotoFolder photoFolder = folderMap.get(dirPath);
+                    Folder photoFolder = folderMap.get(dirPath);
                     photoFolder.getPhotoList().add(photo);
                     folderMap.get(allPhotosKey).getPhotoList().add(photo);
                 } else {
                     // 初始化imageFloder
-                    PhotoFolder photoFolder = new PhotoFolder();
+                    Folder photoFolder = new Folder();
                     List<Photo> photoList = new ArrayList<Photo>();
                     Photo photo = new Photo(path);
                     photoList.add(photo);

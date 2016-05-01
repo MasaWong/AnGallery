@@ -4,12 +4,12 @@ import java.io.Serializable;
 import java.util.List;
 
 /**
- * @Class: PhotoFolder
+ * @Class: Folder
  * @Description: 相片文件夹实体类
  * @author: lling(www.liuling123.com)
  * @Date: 2015/11/4
  */
-public class PhotoFolder implements Serializable {
+public class Folder implements Serializable {
 
     /* 文件夹名 */
     private String mName;

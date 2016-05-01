@@ -7,7 +7,6 @@ import android.graphics.Matrix;
 import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.GestureDetector;
 import android.view.GestureDetector.SimpleOnGestureListener;
 import android.view.MotionEvent;
@@ -16,18 +15,17 @@ import android.view.ScaleGestureDetector.OnScaleGestureListener;
 import android.view.View;
 import android.view.View.OnTouchListener;
 import android.view.ViewTreeObserver;
-import android.widget.ImageView;
+
+import mw.ankara.uikit.image.WebImageView;
 
 /**
  * http://blog.csdn.net/lmj623565791/article/details/39761281
  *
  * @author zhy
  */
-public class ClipZoomImageView extends ImageView implements
+public class ClipZoomImageView extends WebImageView implements
     OnScaleGestureListener, OnTouchListener,
-    ViewTreeObserver.OnGlobalLayoutListener
-
-{
+    ViewTreeObserver.OnGlobalLayoutListener {
 
     private static final String TAG = ClipZoomImageView.class.getSimpleName();
     public static float SCALE_MAX = 4.0f;

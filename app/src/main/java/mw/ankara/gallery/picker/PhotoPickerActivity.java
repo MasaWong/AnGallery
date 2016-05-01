@@ -37,8 +37,8 @@ import mw.ankara.gallery.R;
 import mw.ankara.gallery.clip.PhotoClipActivity;
 import mw.ankara.gallery.picker.adapters.FolderAdapter;
 import mw.ankara.gallery.picker.adapters.PhotoAdapter;
+import mw.ankara.gallery.picker.beans.Folder;
 import mw.ankara.gallery.picker.beans.Photo;
-import mw.ankara.gallery.picker.beans.PhotoFolder;
 import mw.ankara.gallery.picker.utils.OtherUtils;
 import mw.ankara.gallery.picker.utils.PhotoUtils;
 
@@ -81,11 +81,6 @@ public class PhotoPickerActivity extends AppCompatActivity implements PhotoAdapt
     public final static int DEFAULT_NUM = 9;
 
     private final static String ALL_PHOTO = "所有图片";
-
-    /**
-     * 是否显示相机，默认不显示
-     */
-    private boolean mShowCamera = false;
     /**
      * 照片选择模式，默认是单选模式
      */
@@ -98,11 +93,10 @@ public class PhotoPickerActivity extends AppCompatActivity implements PhotoAdapt
     private ProgressDialog mProgressDialog;
 
     private GridView mGridView;
-    private List<Photo> mPhotoLists = new ArrayList<>();
     private ArrayList<String> mSelectList = new ArrayList<>();
     private PhotoAdapter mPhotoAdapter;
 
-    private Map<String, PhotoFolder> mFolderMap;
+    private Map<String, Folder> mFolderMap;
     private ListView mFolderListView;
 
     private TextView mPhotoNumTV;
@@ -158,10 +152,6 @@ public class PhotoPickerActivity extends AppCompatActivity implements PhotoAdapt
          */
         Uri uri = getIntent().getData();
         if (uri != null) {
-            String showCamera = uri.getQueryParameter(EXTRA_SHOW_CAMERA);
-            if (!TextUtils.isEmpty(showCamera)) {
-                mShowCamera = Boolean.parseBoolean(showCamera);
-            }
             String selectMode = uri.getQueryParameter(EXTRA_SELECT_MODE);
             if (!TextUtils.isEmpty(selectMode)) {
                 mSelectMode = Integer.parseInt(selectMode);
@@ -273,7 +263,7 @@ public class PhotoPickerActivity extends AppCompatActivity implements PhotoAdapt
      *
      * @param floders
      */
-    private void toggleFloderList(final List<PhotoFolder> floders) {
+    private void toggleFloderList(final List<Folder> floders) {
         //初始化文件夹列表
         if (!mIsFloderViewInit) {
             ViewStub floderStub = (ViewStub) findViewById(R.id.floder_stub);
@@ -285,19 +275,18 @@ public class PhotoPickerActivity extends AppCompatActivity implements PhotoAdapt
             mFolderListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                 @Override
                 public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                    for (PhotoFolder floder : floders) {
-                        floder.setIsSelected(false);
+                    for (Folder folder : floders) {
+                        folder.setIsSelected(false);
                     }
-                    PhotoFolder floder = floders.get(position);
+                    Folder floder = floders.get(position);
                     floder.setIsSelected(true);
                     adapter.notifyDataSetChanged();
 
-                    mPhotoLists.clear();
-                    mPhotoLists.addAll(floder.getPhotoList());
+                    mPhotoAdapter.setPhotos(floder.getPhotoList());
                     //这里重新设置adapter而不是直接notifyDataSetChanged，是让GridView返回顶部
                     mGridView.setAdapter(mPhotoAdapter);
                     mPhotoNumTV.setText(OtherUtils.formatResourceString(getApplicationContext(),
-                        R.string.photos_num, mPhotoLists.size()));
+                        R.string.photos_num, floder.getPhotoList().size()));
                     mPhotoNameTV.setText(floder.getName());
                     toggle();
                 }
@@ -326,22 +315,24 @@ public class PhotoPickerActivity extends AppCompatActivity implements PhotoAdapt
      * 弹出或者收起文件夹列表
      */
     private void toggle() {
-        if (mFolderListView.getVisibility() == View.VISIBLE) {
+        if (mIsFloderViewShow) {
             mFolderListView.startAnimation(mOutAnimation);
             mFolderListView.setVisibility(View.GONE);
+            mIsFloderViewShow = false;
         } else {
             mFolderListView.startAnimation(mInAnimation);
             mFolderListView.setVisibility(View.VISIBLE);
+            mIsFloderViewShow = true;
         }
     }
 
     /**
      * 选择文件夹
      *
-     * @param photoFolder
+     * @param folder
      */
-    public void selectFloder(PhotoFolder photoFolder) {
-        mPhotoAdapter.setPhotos(photoFolder.getPhotoList(), mShowCamera);
+    public void selectFloder(Folder folder) {
+        mPhotoAdapter.setPhotos(folder.getPhotoList());
         mPhotoAdapter.notifyDataSetChanged();
     }
 
@@ -363,21 +354,19 @@ public class PhotoPickerActivity extends AppCompatActivity implements PhotoAdapt
 
         @Override
         protected void onPostExecute(Object o) {
-            mPhotoLists.addAll(mFolderMap.get(ALL_PHOTO).getPhotoList());
-
-            mPhotoNumTV.setText(OtherUtils.formatResourceString(getApplicationContext(),
-                R.string.photos_num, mPhotoLists.size()));
-
-            mPhotoAdapter = new PhotoAdapter(PhotoPickerActivity.this, mPhotoLists, mShowCamera);
+            List<Photo> photos = mFolderMap.get(ALL_PHOTO).getPhotoList();
+            mPhotoAdapter = new PhotoAdapter(PhotoPickerActivity.this, photos);
             mPhotoAdapter.setSelectMode(mSelectMode);
             mPhotoAdapter.setMaxNum(mMaxNum);
             mPhotoAdapter.setPhotoClickCallBack(PhotoPickerActivity.this);
             mGridView.setAdapter(mPhotoAdapter);
+            mPhotoNumTV.setText(OtherUtils.formatResourceString(getApplicationContext(),
+                R.string.photos_num, photos.size()));
             Set<String> keys = mFolderMap.keySet();
-            final List<PhotoFolder> floders = new ArrayList<>();
+            final List<Folder> floders = new ArrayList<>();
             for (String key : keys) {
                 if (ALL_PHOTO.equals(key)) {
-                    PhotoFolder floder = mFolderMap.get(key);
+                    Folder floder = mFolderMap.get(key);
                     floder.setIsSelected(true);
                     floders.add(0, floder);
                 } else {
